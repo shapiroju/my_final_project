@@ -1,0 +1,112 @@
+---
+title: "INFO 550 Homework 2"
+author: "Julia Shapiro"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Input Data
+
+
+```{r, message=FALSE}
+#Read in original dataset from github
+url2 = "https://raw.githubusercontent.com/shapiroju/INFO550_HW2/main/Distinction_Data_JS.txt"
+mentalhealth = read.table(url2, header = TRUE)
+attach(mentalhealth)
+
+#Making ASRS_SumA a categorical variable
+mentalhealth$ADHD = NA
+mentalhealth$ADHD[mentalhealth$ASRS_SumA < 4] = "No_ADHD"
+mentalhealth$ADHD[mentalhealth$ASRS_SumA >= 4] = "Yes_ADHD"
+
+#According to the SBQ, these are the conditions that make an individual not suicidal or suicidal
+mentalhealth$Suicidal_SBQ = NA
+mentalhealth$Suicidal_SBQ[mentalhealth$SBQ_Sum < 7.0] = "No_Risk"
+mentalhealth$Suicidal_SBQ[mentalhealth$SBQ_Sum >= 7.0]="At_Risk"
+
+
+#This looks weird because I messed up something and now its fixed but I didn't want to go back and rename variables
+mentalhealth$DASS_Anxiety2 = mentalhealth$DASS_Anxiety
+mentalhealth$DASS_Depression2 = mentalhealth$DASS_Depression
+mentalhealth$DASS_Stress2 = mentalhealth$DASS_Stress
+
+#Updating the DASS summary score variable accordingly
+mentalhealth$DASS_Sum2 = mentalhealth$DASS_Anxiety2 + mentalhealth$DASS_Depression2 + mentalhealth$DASS_Stress2;
+
+
+
+#Making a categorical variable for depression based on the conditions from DASS
+mentalhealth$Depression = NA
+mentalhealth$Depression[mentalhealth$DASS_Depression2 <= 9] = "Normal"
+mentalhealth$Depression[mentalhealth$DASS_Depression2 >= 10 & mentalhealth$DASS_Depression2 <= 13] = "Mild"
+mentalhealth$Depression[mentalhealth$DASS_Depression2 >= 14 & mentalhealth$DASS_Depression2 <= 20] = "Moderate"
+mentalhealth$Depression[mentalhealth$DASS_Depression2 >= 21 & mentalhealth$DASS_Depression2 <= 27] = "Severe"
+mentalhealth$Depression[mentalhealth$DASS_Depression2 >= 28] = "XtremeSevere"
+
+#Making a categorical variable for anxiety based on the conditions from DASS
+mentalhealth$Anxiety = NA
+mentalhealth$Anxiety[mentalhealth$DASS_Anxiety2 <= 7] = "Normal"
+mentalhealth$Anxiety[mentalhealth$DASS_Anxiety2 >= 8 & mentalhealth$DASS_Anxiety2 <= 9] = "Mild"
+mentalhealth$Anxiety[mentalhealth$DASS_Anxiety2 >= 10 & mentalhealth$DASS_Anxiety2 <= 14] = "Moderate"
+mentalhealth$Anxiety[mentalhealth$DASS_Anxiety2 >= 15 & mentalhealth$DASS_Anxiety2 <= 19] = "Severe"
+mentalhealth$Anxiety[mentalhealth$DASS_Anxiety2 >= 20] = "XtremeSevere"
+
+#Making a categorical variable for stress based on the conditions from DASS
+mentalhealth$Stress = NA
+mentalhealth$Stress[mentalhealth$DASS_Stress2 <= 14] = "Normal"
+mentalhealth$Stress[mentalhealth$DASS_Stress2 >= 15 & mentalhealth$DASS_Stress2 <= 18] = "Mild"
+mentalhealth$Stress[mentalhealth$DASS_Stress2 >= 19 & mentalhealth$DASS_Stress2 <= 25] = "Moderate"
+mentalhealth$Stress[mentalhealth$DASS_Stress2 >= 26 & mentalhealth$DASS_Stress2 <= 33] = "Severe"
+mentalhealth$Stress[mentalhealth$DASS_Stress2 >= 34] = "XtremeSevere"
+
+#These are the conditions I came up with to categorize an individual as 
+#having attempted suicide within the past year
+mentalhealth$Suicide_Attempt = "other"
+mentalhealth$Suicide_Attempt[(mentalhealth$Suicide_Ideation == "Attempt") &
+                               (mentalhealth$Suicidal_Thoughts == "Often" | mentalhealth$Suicidal_Thoughts == "Very_Often") &
+                               (mentalhealth$Attempt_Likely != "Never") &
+                               (mentalhealth$Attempt_Likely != "No_Chance")] = "Attempt"
+
+mentalhealth$Suicide_Attempt[mentalhealth$Suicide_Ideation == "Plan" &
+                               (mentalhealth$Attempt_Likely == "Likely")] = "Attempt"
+
+attach(mentalhealth)
+
+
+mentalhealth$Suicide_Attempt[mentalhealth$Suicide_Attempt == "other"] = "No_Attempt"
+
+attach(mentalhealth)
+
+
+#Taking the variables that we want
+mentalhealth=mentalhealth[c(1:12,18,22:31)]
+
+#Making a new dataframe
+new_mentalhealth = data.frame(mentalhealth)
+attach(new_mentalhealth)
+```
+
+## Exploratory Analysis
+
+In a sample of 171 college students, 27 participants indicated that they thought about suicide often or very often in a given academic year.
+
+```{r pressure, echo=FALSE}
+#Barplot of Suicidal Thoughts
+Suicidal_Thoughts=as.factor(Suicidal_Thoughts);
+Suicidal_Thoughts=factor(mentalhealth$Suicidal_Thoughts, 
+                         levels = c("Never","Rarely","Sometimes","Often","Very_Often"));
+
+T=table(Suicidal_Thoughts)
+T
+barplot(T,
+        col=topo.colors(6),
+        main="How often do college students \n think about suicide in a given academic year?", 
+        ylab="Number of Students",
+        ylim=c(0,120)
+)
+```
+
